@@ -1,0 +1,396 @@
+{
+  "name": "CRUD_Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        480
+      ],
+      "id": "e64c8e9b-ab36-445b-83b6-0b6ade0000b8",
+      "name": "Message Receiver",
+      "webhookId": "be772e24-6d75-4967-9845-52e7e676582c",
+      "credentials": {
+        "telegramApi": {
+          "id": "SjhuAKhbqKznTMMr",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are Zeca, a Brazilian personal finance assistant. You **must** communicate only in Brazilian Portuguese.\n\nYour sole purpose is to help the user manage their monthly bills using the provided tools.\n\n**CRITICAL CONTEXT:**\nThe current date is **{{ $now.toISODate() }}** (Format: YYYY-MM-DD).\nYou MUST use this date as a reference for any relative dates the user mentions (e.g., \"tomorrow\", \"next week\", \"due on the 5th\").\n\nYou **must strictly refuse** to answer any question or perform any task not related to managing bills or for which you do not have a tool. If asked, politely state in Portuguese that you can only help with monthly bill management."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        -64
+      ],
+      "id": "f348a1a4-bf8a-43a8-82bb-b34817a64ab0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "qwen3:4b",
+        "options": {
+          "temperature": 0.2,
+          "topP": 0.9,
+          "format": "default"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        144
+      ],
+      "id": "f7aad650-6402-4a1e-9c18-1e1f2fc8b3b0",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "4IROVSbrVvtjV7rT",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -288,
+        -48
+      ],
+      "id": "995e2249-aa21-4754-9351-ef86d7d74ecd",
+      "name": "When chat message received",
+      "webhookId": "94cee3a2-7458-40c8-9f10-2034758a514a"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "PXyfbxlZIxDYYHd8",
+          "mode": "list",
+          "cachedResultName": "monthly_bills",
+          "cachedResultUrl": "/projects/89X5s5tcw2dAp2oS/datatables/PXyfbxlZIxDYYHd8"
+        }
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        672,
+        224
+      ],
+      "id": "565b9286-d5ba-48a7-8e73-1231ddad803a",
+      "name": "Get row(s) in Data table"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        128
+      ],
+      "id": "a55a1498-1eee-49c0-8966-dcc83137a42a",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "rowExists",
+        "dataTableId": {
+          "__rl": true,
+          "value": "PXyfbxlZIxDYYHd8",
+          "mode": "list",
+          "cachedResultName": "monthly_bills",
+          "cachedResultUrl": "/projects/89X5s5tcw2dAp2oS/datatables/PXyfbxlZIxDYYHd8"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "name",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions0_Value', `O nome da conta. É o identificador principal. Exemplos: \"Aluguel\", \"Conta de Luz\", \"Netflix\"`, 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        272,
+        224
+      ],
+      "id": "cc15eff1-c070-4412-9f8a-7705079d18dc",
+      "name": "If row exists in Data table"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "PXyfbxlZIxDYYHd8",
+          "mode": "list",
+          "cachedResultName": "monthly_bills",
+          "cachedResultUrl": "/projects/89X5s5tcw2dAp2oS/datatables/PXyfbxlZIxDYYHd8"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions0_Value', \"O ID da conta, este valor é grado automaticamente quando a conta cadastrada. Você pode obter este valor consultando a conta através da tool `If row exists in Data table`.\", 'string') }}"
+            },
+            {
+              "keyName": "name",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Value', `O nome da conta. É o identificador principal. Exemplos: \"Aluguel\", \"Conta de Luz\", \"Netflix\"`, 'string') }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "is_paid": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('is_paid', `Informa se a conta já foi paga ou não. Use 'true' para contas pagas e 'false' para contas pendentes (não pagas).`, 'boolean') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "is_paid",
+              "displayName": "is_paid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        400,
+        240
+      ],
+      "id": "bd6c7e54-768e-4019-a859-d79ddd247736",
+      "name": "Update row(s) in Data table"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "PXyfbxlZIxDYYHd8",
+          "mode": "list",
+          "cachedResultName": "monthly_bills",
+          "cachedResultUrl": "/projects/89X5s5tcw2dAp2oS/datatables/PXyfbxlZIxDYYHd8"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "is_paid": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('is_paid', `Informa se a conta já foi paga ou não. Use 'true' para contas pagas e 'false' para contas pendentes (não pagas).`, 'boolean') }}",
+            "amount": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('amount', `O valor (custo) da conta. Deve ser um número. Exemplos: 55.90, 1500, 180.25.`, 'number') }}",
+            "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('name', `O nome da conta. É o identificador principal. Exemplos: \"Aluguel\", \"Conta de Luz\", \"Netflix\".`, 'string') }}",
+            "due_date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('due_date', `A data de vencimento da conta. Deve ser formatada como YYYY-MM-DD. Exemplo: \"2025-10-28\".`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "is_paid",
+              "displayName": "is_paid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        528,
+        224
+      ],
+      "id": "3a2633ec-5fcf-4fd0-9c54-536428f7838b",
+      "name": "Insert row in Data table"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Get row(s) in Data table": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If row exists in Data table": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row(s) in Data table": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row in Data table": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c5e222a4-3818-4930-aa5d-fc0fa5104849",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "96479b3d1c5d43a6be44d4ade5baf811c378ebf69e4954a043d84626318fcd5e"
+  },
+  "id": "921CLxUAgC85VAQv",
+  "tags": []
+}
